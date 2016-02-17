@@ -1,14 +1,14 @@
 #define clkPin 2 //signal A
 #define dtPin 3 //signal B
 
-float encoderVal = 0.0; //encoder val calibrated or set to 0
-unsigned long encoderValTime = 1;
-float prevEncoderVal = 0.0;
-unsigned long prevEncoderValTime = 0;
-float rotationSpeed = 0.0;
+int encoderVal = 0; //encoder val calibrated or set to 0
+int encoderValTime = 0;
+int prevEncoderVal = 0;
+int prevEncoderValTime = 0;
+int rotationSpeed = 0;
 int cycleCounter = 0;
 unsigned long timeSum = 0;
-unsigned long avgTime = 0;
+//unsigned long avgTime = 0.0;
 
 
 
@@ -28,34 +28,30 @@ void loop()
   if(change != 0)
   {
     cycleCounter += 1;
-    timeSum += encoderValTime; //sum up time to calculate avg every 10 cycles
+    timeSum += encoderValTime - prevEncoderValTime; //sum up time to calculate avg every 10 cycles
     
     prevEncoderVal = encoderVal;
     encoderVal = encoderVal + change;
     if(cycleCounter == 9)
     {
-      avgTime = timeSum / 10;
+      //rotations / time * multiplier
+      rotationSpeed = (1000000 / timeSum);
+      //Serial.println(rotationSpeed);
+      //Serial.println("SUPPPPPPPPPPPP");
+      timeSum = 0.0;
       cycleCounter = 0;
-      timeSum = 0;
-      Serial.println(avgTime);
     }
-    Serial.println(encoderVal);
+    
+    //Printable things:
+    //Serial.println(encoderVal);
     //Serial.println(encoderValTime - prevEncoderValTime);
     //Serial.println((encoderVal - prevEncoderVal));
   }
 
-  //if(encoderValTime - prevEncoderValTime != 0 && encoderVal - prevEncoderVal != 0)
-    //rotationSpeed = (encoderVal - prevEncoderVal) / (encoderValTime - prevEncoderValTime);
-  
-  //if(encoderVal - prevEncoderVal != 0)
-    //Serial.println((encoderVal - prevEncoderVal));
-  
-  //Serial.println(rotationSpeed);
-  
-  //if(encoderValTime - prevEncoderValTime != 0)
-    //Serial.println(encoderValTime - prevEncoderValTime);
-    
- 
+  //else
+    //Serial.println("Hi ******************");
+
+    Serial.println(encoderVal);
 }
 
 int getEncoderTurn(void)
