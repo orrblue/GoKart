@@ -1,6 +1,25 @@
 #define clkPin 2 //signal A
 #define dtPin 3 //signal B
 
+/*
+ * Motor to encoder ratio 1:369
+ * 4428 "encoder ticks" per motor revolution
+ * Steering has about 135 degree turn -> 67 degrees each way
+ * Turning steering shaft ~65 degrees is 800 ticks
+ * 
+ */
+
+//TODO: Move motor to certain angle based on distance from target.
+/*  Assume kart is following wall on its right.
+ *  Assume kart is to be 1.0m away from the wall
+ *  Assume maximum distance away from wall is 1.5m
+ *  Assume minimum distance away from wall is 0.5m
+ * 
+ *  At 1.50m ("max distance") left of target, turn -800
+ *  At h
+ * 
+ */
+
 int encoderVal = 0; //encoder val calibrated or set to 0
 int encoderValTime = 0;
 int prevEncoderVal = 0;
@@ -34,10 +53,9 @@ void loop()
     encoderVal = encoderVal + change;
     if(cycleCounter == 9)
     {
-      //rotations / time * multiplier
-      rotationSpeed = (1000000 / timeSum);
+      //===Rotations / Time * Multiplier===
+      //rotationSpeed = (1000000 / timeSum);
       //Serial.println(rotationSpeed);
-      //Serial.println("SUPPPPPPPPPPPP");
       timeSum = 0.0;
       cycleCounter = 0;
     }
@@ -48,10 +66,15 @@ void loop()
     //Serial.println((encoderVal - prevEncoderVal));
   }
 
-  //else
-    //Serial.println("Hi ******************");
+  /*else
+  {
+    Serial.println("Hi ******************");
+  }
+*/
 
     Serial.println(encoderVal);
+
+
 }
 
 int getEncoderTurn(void)
