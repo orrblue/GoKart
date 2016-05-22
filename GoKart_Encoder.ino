@@ -1,24 +1,30 @@
 #include <NewPing.h>
 #include <Servo.h>
 
-// ENCODER
+
+//ENCODER
 #define clkPin 2 //signal A
 #define dtPin 3 //signal B
 
 //PROXIMITY SENSOR
 #define TRIGGER_PIN 11
 #define ECHO_PIN 12
-#define SERVO_PIN 9
 #define MAX_DISTANCE 160
 #define WALL_DISTANCE 100
+
+//MOTOR
+#define CLOCK_PIN 6
+#define COUNTER_CLOCK_PIN 7
+#define MAX_ENCODER_VAL 500
+#define MIN_ENCODER_VAL -500
 
 
 
 /* INFORMATION
  * Motor to encoder ratio 1:369
  * 4428 "encoder ticks" per motor revolution
- * Clockwise rotation = decreasing ticks
- * CounterClockWise rotation = increasing ticks
+ * Clockwise rotation = decreasing ticks. 1550 and up
+ * CounterClockWise rotation = increasing ticks. 1450 and down
  * Steering has about 135 degree turn -> 67 degrees each way
  * Turning steering shaft ~65 degrees is 800 ticks
  * 
@@ -49,6 +55,9 @@ unsigned long timeSum = 0;
 //unsigned long avgTime = 0.0;
 
 int requestedEncoderVal = 0;
+bool reachedEndCounterClockwise = false;
+bool reachedEndClockwise = true;
+
 
 
 
@@ -56,19 +65,23 @@ void setup()
 {
   pinMode(clkPin, INPUT);  //pin numbers as inputs
   pinMode(dtPin, INPUT);   //pin numbers as inputs
+  pinMode(CLOCK_PIN, INPUT);
+  pinMode(COUNTER_CLOCK_PIN, INPUT);
+  
   Serial.begin(250000);     //sets data rate, bits/second
   servo.attach(SERVO_PIN);
   servo.writeMicroseconds(1500);
+  //stopMotor();
 }
 
 void loop()
 {
   //Proximity Sensor
 //  digitalWrite(ECHO_PIN, LOW); 
-  microseconds = sonar.ping();
+//  microseconds = sonar.ping();
 //  cm = sonar.convert_cm(microseconds);
 
-  turnMotor();
+  //stopMotor();
   
   //prevEncoderValTime = encoderValTime;
   
@@ -103,11 +116,30 @@ void loop()
 
   //requestedEncoderVal = convertDistanceToTicks(cm);
   //
-  //while encoder val != requestedEncoderVal
-  //  if encoderVal < requestedEncoderVal
-  //    turn motor counterClockWise, increase encoder val
-  //  else
-  //    turn motor clockWise, decrease encoder val
+  if(encoderVal < MAX_ENCODER_VAL && !reachedEndCounterClockwise)
+  {
+    turnMotorCounterClockwise();
+  }
+  else
+  {
+    //stopMotor();
+    reachedEndCounterClockwise = true;
+    reachedEndClockwise = false;
+    //delay(5000);
+  }
+
+  if(encoderVal > MIN_ENCODER_VAL && !reachedEndClockwise)
+  {
+    turnMotorClockwise();
+  }
+  else
+  {
+    //stopMotor();
+    reachedEndCounterClockwise = false;
+    reachedEndClockwise = true;
+    //delay(5000);
+  }
+
     
     //Serial.println(change);
 
@@ -139,11 +171,21 @@ int getEncoderTurn(void)
 
 int convertDistanceToTicks(int centimeters)
 {
-  return -16*(centimeters-100);
+  return -16*(centimeters-100); //Change sign if wrong direction
 }
 
-void turnMotor()
+void stopMotor()
 {
   servo.writeMicroseconds(1500);
+}
+
+void turnMotorClockwise()
+{
+  servo.writeMicroseconds(1620);
+}
+
+void turnMotorCounterClockwise()
+{
+  servo.writeMicroseconds(1250);
 }
 
