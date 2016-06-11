@@ -17,6 +17,7 @@
 #define COUNTER_CLOCK_PIN 7
 #define MAX_ENCODER_VAL 500
 #define MIN_ENCODER_VAL -500
+#define SERVO_PIN 9
 
 
 
@@ -109,35 +110,43 @@ void loop()
     */
     
     //Printable things:
-    Serial.println(encoderVal);
     //Serial.println(encoderValTime - prevEncoderValTime);
     //Serial.println((encoderVal - prevEncoderVal));
   }
 
+  Serial.println(encoderVal);
+
+
   //requestedEncoderVal = convertDistanceToTicks(cm);
   //
+
+  //TODO: ************FLIP MAX AND MIN ENCODER***********
   if(encoderVal < MAX_ENCODER_VAL && !reachedEndCounterClockwise)
   {
     turnMotorCounterClockwise();
+    Serial.println("IF FIRST");
   }
   else
   {
+    Serial.println("ELSE FIRST");
     //stopMotor();
     reachedEndCounterClockwise = true;
     reachedEndClockwise = false;
-    //delay(5000);
+    //delay(500);
   }
 
   if(encoderVal > MIN_ENCODER_VAL && !reachedEndClockwise)
   {
     turnMotorClockwise();
+    Serial.println("IF SECOND");
   }
   else
   {
+    Serial.println("ELSE SECOND");
     //stopMotor();
     reachedEndCounterClockwise = false;
     reachedEndClockwise = true;
-    //delay(5000);
+    //delay(500);
   }
 
     
@@ -181,11 +190,11 @@ void stopMotor()
 
 void turnMotorClockwise()
 {
-  servo.writeMicroseconds(1620);
+  servo.writeMicroseconds(1650); //1620 before
 }
 
 void turnMotorCounterClockwise()
 {
-  servo.writeMicroseconds(1250);
+  servo.writeMicroseconds(1350); //1250 before
 }
 
