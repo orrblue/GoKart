@@ -3,20 +3,20 @@
 
 
 //ENCODER
-#define clkPin 2 //signal A
-#define dtPin 3 //signal B
+#define clkPin 3 //signal B
+#define dtPin 2 //signal A
 
 //PROXIMITY SENSOR
-#define TRIGGER_PIN 11
-#define ECHO_PIN 12
-#define MAX_DISTANCE 160
-#define WALL_DISTANCE 100
+//#define TRIGGER_PIN 11
+//#define ECHO_PIN 12
+//#define MAX_DISTANCE 160
+//#define WALL_DISTANCE 100
 
 //MOTOR
-#define CLOCK_PIN 6
-#define COUNTER_CLOCK_PIN 7
-#define MAX_ENCODER_VAL 500
-#define MIN_ENCODER_VAL -500
+//#define CLOCK_PIN 6
+//#define COUNTER_CLOCK_PIN 7
+#define MAX_ENCODER_VAL 150 //500 is safe
+#define MIN_ENCODER_VAL -150 //-500 is safe
 #define SERVO_PIN 9
 
 
@@ -42,9 +42,9 @@
  */
 
 Servo servo;
-NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
-long microseconds, cm;
-unsigned long time;
+//NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
+//long microseconds, cm;
+//unsigned long time;
 
 int encoderVal = 0; //encoder val calibrated or set to 0
 int encoderValTime = 0;
@@ -66,13 +66,14 @@ void setup()
 {
   pinMode(clkPin, INPUT);  //pin numbers as inputs
   pinMode(dtPin, INPUT);   //pin numbers as inputs
-  pinMode(CLOCK_PIN, INPUT);
-  pinMode(COUNTER_CLOCK_PIN, INPUT);
+  //pinMode(CLOCK_PIN, INPUT);
+  //pinMode(COUNTER_CLOCK_PIN, INPUT);
   
   Serial.begin(250000);     //sets data rate, bits/second
   servo.attach(SERVO_PIN);
-  servo.writeMicroseconds(1500);
-  //stopMotor();
+  stopMotor();
+  delay(1500);
+  
 }
 
 void loop()
@@ -80,10 +81,7 @@ void loop()
   //Proximity Sensor
 //  digitalWrite(ECHO_PIN, LOW); 
 //  microseconds = sonar.ping();
-//  cm = sonar.convert_cm(microseconds);
-
-  //stopMotor();
-  
+//  cm = sonar.convert_cm(microseconds);  
   //prevEncoderValTime = encoderValTime;
   
   int change = getEncoderTurn();
@@ -97,6 +95,8 @@ void loop()
     */
     
     encoderVal = encoderVal + change;
+    //Serial.print("  Enc: " );   
+    Serial.println(encoderVal);
     
     /*
     if(cycleCounter == 9)
@@ -114,43 +114,45 @@ void loop()
     //Serial.println((encoderVal - prevEncoderVal));
   }
 
-  Serial.println(encoderVal);
+  
 
 
   //requestedEncoderVal = convertDistanceToTicks(cm);
-  //
+
 
   //TODO: ************FLIP MAX AND MIN ENCODER***********
-  if(encoderVal < MAX_ENCODER_VAL && !reachedEndCounterClockwise)
-  {
-    turnMotorCounterClockwise();
-    Serial.println("IF FIRST");
-  }
-  else
-  {
-    Serial.println("ELSE FIRST");
-    //stopMotor();
-    reachedEndCounterClockwise = true;
-    reachedEndClockwise = false;
-    //delay(500);
-  }
-
-  if(encoderVal > MIN_ENCODER_VAL && !reachedEndClockwise)
-  {
-    turnMotorClockwise();
-    Serial.println("IF SECOND");
-  }
-  else
-  {
-    Serial.println("ELSE SECOND");
-    //stopMotor();
-    reachedEndCounterClockwise = false;
-    reachedEndClockwise = true;
-    //delay(500);
+  if (!reachedEndCounterClockwise) {
+    if(encoderVal < MAX_ENCODER_VAL)
+    {
+      turnMotorCounterClockwise();
+      //Serial.print("\tTURNING C-C");
+    }
+    else
+    {
+      //Serial.print("\tELSE FIRST");
+      stopMotor();
+      reachedEndCounterClockwise = true;
+      reachedEndClockwise = false;
+      delay(500);
+    }
   }
 
-    
-    //Serial.println(change);
+  if (!reachedEndClockwise) {
+    if(encoderVal > MIN_ENCODER_VAL)
+    {
+      turnMotorClockwise();
+      //Serial.print("\tTURNING C");
+    }
+    else
+    {
+      //Serial.print("\tELSE SECOND");
+      stopMotor();
+      reachedEndCounterClockwise = false;
+      reachedEndClockwise = true;
+      delay(500);
+    }
+  }
+
 
 
 }
@@ -190,11 +192,11 @@ void stopMotor()
 
 void turnMotorClockwise()
 {
-  servo.writeMicroseconds(1650); //1620 before
+  servo.writeMicroseconds(1800); //1620 before
 }
 
 void turnMotorCounterClockwise()
 {
-  servo.writeMicroseconds(1350); //1250 before
+  servo.writeMicroseconds(1200); //1250 before
 }
 
