@@ -6,6 +6,9 @@
 #define clkPin 3 //signal B
 #define dtPin 2 //signal A
 
+#define ENCODER_A 2
+#define ENCODER_B 3
+
 //PROXIMITY SENSOR
 //#define TRIGGER_PIN 11
 //#define ECHO_PIN 12
@@ -19,13 +22,15 @@
 #define MIN_ENCODER_VAL -150 //-500 is safe
 #define SERVO_PIN 9
 
-
+#define TURN_L_PW 1600
+#define TURN_R_PW 1380 //1380 vs 1600 is about the same turn speed, but still drifts. 1381 drifts other way
+#define NEUTRAL_PW 1500
 
 /* INFORMATION
  * Motor to encoder ratio 1:369
  * 4428 "encoder ticks" per motor revolution
- * Clockwise rotation = decreasing ticks. 1550 and up
- * CounterClockWise rotation = increasing ticks. 1450 and down
+ * leftward rotation = decreasing ticks. 1550 and up
+ * rightward rotation = increasing ticks. 1450 and down
  * Steering has about 135 degree turn -> 67 degrees each way
  * Turning steering shaft ~65 degrees is 800 ticks
  * 
@@ -56,24 +61,45 @@ unsigned long timeSum = 0;
 //unsigned long avgTime = 0.0;
 
 int requestedEncoderVal = 0;
-bool reachedEndCounterClockwise = false;
-bool reachedEndClockwise = true;
+bool reachedEndRight = false;
+bool reachedEndLeft = true;
 
-
-
+volatile int encoderAcc = 0;
+volatile byte encoderAState = HIGH;
+volatile byte encoderBState = HIGH;
 
 void setup()
 {
   pinMode(clkPin, INPUT);  //pin numbers as inputs
   pinMode(dtPin, INPUT);   //pin numbers as inputs
-  //pinMode(CLOCK_PIN, INPUT);
-  //pinMode(COUNTER_CLOCK_PIN, INPUT);
   
   Serial.begin(250000);     //sets data rate, bits/second
+
+  attachInterrupt(
+    digitalPinToInterrupt(ENCODER_A),
+    risingALine,
+    RISING
+  );
+  attachInterrupt(
+    digitalPinToInterrupt(ENCODER_A),
+    fallingALine,
+    FALLING
+  );
+  attachInterrupt(
+    digitalPinToInterrupt(ENCODER_B),
+    risingBLine,
+    RISING
+  );
+  attachInterrupt(
+    digitalPinToInterrupt(ENCODER_B),
+    fallingBLine,
+    FALLING
+  );
+  
   servo.attach(SERVO_PIN);
   stopMotor();
-  delay(1500);
-  
+  delay(2500);
+  turnMotorRight();
 }
 
 void loop()
@@ -96,7 +122,6 @@ void loop()
     
     encoderVal = encoderVal + change;
     //Serial.print("  Enc: " );   
-    Serial.println(encoderVal);
     
     /*
     if(cycleCounter == 9)
@@ -114,50 +139,56 @@ void loop()
     //Serial.println((encoderVal - prevEncoderVal));
   }
 
-  
-
+  Serial.println(encoderVal);
 
   //requestedEncoderVal = convertDistanceToTicks(cm);
 
-
-  //TODO: ************FLIP MAX AND MIN ENCODER***********
-  if (!reachedEndCounterClockwise) {
-    if(encoderVal < MAX_ENCODER_VAL)
-    {
-      turnMotorCounterClockwise();
-      //Serial.print("\tTURNING C-C");
-    }
-    else
-    {
-      //Serial.print("\tELSE FIRST");
-      stopMotor();
-      reachedEndCounterClockwise = true;
-      reachedEndClockwise = false;
-      delay(500);
-    }
+  if (encoderVal >= MAX_ENCODER_VAL && !reachedEndRight) {
+    stopMotor();
+    reachedEndRight = true;
+    reachedEndLeft = false;
+    delay(500);
+    turnMotorLeft();
+    Serial.println("FIRST IF");
+  } else if (encoderVal <= MIN_ENCODER_VAL && !reachedEndLeft) {
+    stopMotor();
+    reachedEndRight = false;
+    reachedEndLeft = true;
+    delay(500);
+    turnMotorRight();
+    Serial.println("SECOND IF");
   }
-
-  if (!reachedEndClockwise) {
-    if(encoderVal > MIN_ENCODER_VAL)
-    {
-      turnMotorClockwise();
-      //Serial.print("\tTURNING C");
-    }
-    else
-    {
-      //Serial.print("\tELSE SECOND");
-      stopMotor();
-      reachedEndCounterClockwise = false;
-      reachedEndClockwise = true;
-      delay(500);
-    }
-  }
-
-
-
 }
 
-int getEncoderTurn(void)
+void risingALine(void) {
+  encoderAState = HIGH;
+}
+
+void fallingALine(void) {
+  encoderAState = LOW;
+
+  if (encoderBState == HIGH)
+    ++encoderAcc;
+  else
+    --encoderAcc;
+}
+
+void risingBLine(void) {
+  encoderBState = HIGH;
+}
+
+void fallingBLine(void) {
+  encoderBState = LOW;
+}
+
+int getEncoderTurn(void) {
+  int ret = encoderAcc;
+  encoderAcc = 0;
+
+  return ret;
+}
+
+/*int getEncoderTurn(void)
 {
   static int oldA = HIGH;   //oldA = 1
   static int oldB = HIGH;   //oldB = 1
@@ -177,26 +208,26 @@ int getEncoderTurn(void)
   oldA = newA;
   oldB = newB;
   return result;
-}
+}*/
 
 
-int convertDistanceToTicks(int centimeters)
+/*int convertDistanceToTicks(int centimeters)
 {
   return -16*(centimeters-100); //Change sign if wrong direction
-}
+}*/
 
 void stopMotor()
 {
-  servo.writeMicroseconds(1500);
+  servo.writeMicroseconds(NEUTRAL_PW);
 }
 
-void turnMotorClockwise()
+void turnMotorLeft()
 {
-  servo.writeMicroseconds(1800); //1620 before
+  servo.writeMicroseconds(TURN_L_PW);
 }
 
-void turnMotorCounterClockwise()
+void turnMotorRight()
 {
-  servo.writeMicroseconds(1200); //1250 before
+  servo.writeMicroseconds(TURN_R_PW);
 }
 
