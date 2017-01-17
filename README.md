@@ -1,5 +1,5 @@
 # Electric GoKart
-Semi-Autonomous steering for Engineering Club Go Kart
+Semi-Autonomous steering for Engineering Club Go Kart. 
 This is a project that the Engineering Club at Foothill College was working on. They may have continued in a different repo.
 
 The pictures included show some of the calculations and plans we made during the design stage.
